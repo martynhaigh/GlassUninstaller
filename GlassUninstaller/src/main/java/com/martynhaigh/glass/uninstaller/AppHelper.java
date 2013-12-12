@@ -44,6 +44,8 @@ public class AppHelper {
 
     private final ArrayList<String> mExcludedApps = new ArrayList<String>();
 
+    private final Set<String> mAddedPackages = new HashSet<String>();
+
     public AppHelper(Activity activity) {
         mActivity = activity;
 
@@ -80,34 +82,46 @@ public class AppHelper {
             return;
         }
 
+
+        if (mApplications == null) {
+            mApplications = new ArrayList<ApplicationInfo>();
+        }
+        mApplications.clear();
+
         PackageManager manager = mActivity.getPackageManager();
 
-        Intent mainIntent = new Intent("com.google.android.glass.action.VOICE_TRIGGER", null);
+        Intent intent = new Intent("com.google.android.glass.action.VOICE_TRIGGER", null);
 
-        final List<ResolveInfo> apps = manager.queryIntentActivities(mainIntent, 0);
+        addApplications(manager, intent);
+
+        intent = new Intent(Intent.ACTION_MAIN, null);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        addApplications(manager, intent);
+    }
+
+    private void addApplications(PackageManager manager, Intent intent) {
+        final List<ResolveInfo> apps = manager.queryIntentActivities(intent, 0);
         Collections.sort(apps, new ResolveInfo.DisplayNameComparator(manager));
 
         if (apps != null) {
             final int count = apps.size();
-
-            if (mApplications == null) {
-                mApplications = new ArrayList<ApplicationInfo>(count);
-            }
-            mApplications.clear();
-            Set<String> addedPackages = new HashSet<String>();
 
             for (int i = 0; i < count; i++) {
                 ApplicationInfo application = new ApplicationInfo();
                 ResolveInfo info = apps.get(i);
 
                 // Let's filter out this app
-                if (!addedPackages.contains(info.activityInfo.applicationInfo.packageName) && !mExcludedApps.contains(info.activityInfo.applicationInfo.packageName)) {
-                    addedPackages.add(info.activityInfo.applicationInfo.packageName);
+                if (!mAddedPackages.contains(info.activityInfo.applicationInfo.packageName) && !mExcludedApps.contains(info.activityInfo.applicationInfo.packageName)) {
+                    //Log.d(LOGTAG, "adding app " + info.activityInfo.applicationInfo.packageName);
+                    mAddedPackages.add(info.activityInfo.applicationInfo.packageName);
                     application.title = info.loadLabel(manager);
                     application.setActivity(info.activityInfo.applicationInfo.packageName);
                     application.icon = info.activityInfo.loadIcon(manager);
 
                     mApplications.add(application);
+                } else {
+                    //Log.d(LOGTAG, "filtering out app " + info.activityInfo.applicationInfo.packageName);
                 }
             }
         }
