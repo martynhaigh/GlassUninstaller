@@ -113,29 +113,14 @@ public class AppHelper {
 
                 // Let's filter out this app
                 if (!mAddedPackages.contains(info.activityInfo.applicationInfo.packageName) && !mExcludedApps.contains(info.activityInfo.applicationInfo.packageName)) {
-                    //Log.d(LOGTAG, "adding app " + info.activityInfo.applicationInfo.packageName);
                     mAddedPackages.add(info.activityInfo.applicationInfo.packageName);
                     application.title = info.loadLabel(manager);
                     application.setActivity(info.activityInfo.applicationInfo.packageName);
                     application.icon = info.activityInfo.loadIcon(manager);
 
                     mApplications.add(application);
-                } else {
-                    //Log.d(LOGTAG, "filtering out app " + info.activityInfo.applicationInfo.packageName);
                 }
             }
-        }
-    }
-
-
-    /**
-     * Receives notifications when applications are added/removed.
-     */
-    private class ApplicationsIntentReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            loadApplications(false);
-            bindApplications();
         }
     }
 
