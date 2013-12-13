@@ -26,6 +26,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -47,7 +48,7 @@ public class AppHelper {
     public AppHelper(Activity activity) {
         mActivity = activity;
 
-        mRobotoLight = Typeface.createFromAsset(activity.getAssets(), "fonts/Roboto-Light.ttf");
+        mRobotoLight = Typeface.createFromFile(new File("/system/glass_fonts", "Roboto-Thin.ttf"));
 
         ((TextView) activity.findViewById(android.R.id.text1)).setTypeface(mRobotoLight);
     }
