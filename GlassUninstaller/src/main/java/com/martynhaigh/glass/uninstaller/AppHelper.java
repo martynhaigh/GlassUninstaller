@@ -13,11 +13,11 @@ package com.martynhaigh.glass.uninstaller;
 
 import android.app.Activity;
 import android.content.*;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,9 +40,7 @@ public class AppHelper {
     private ListView mListView;
 
     private Typeface mRobotoLight;
-    private static ArrayList<ApplicationInfo> mApplications;
-
-    private final ArrayList<String> mExcludedApps = new ArrayList<String>();
+    private static ArrayList<AppInfo> mApplications;
 
     private final Set<String> mAddedPackages = new HashSet<String>();
 
@@ -51,14 +49,7 @@ public class AppHelper {
 
         mRobotoLight = Typeface.createFromAsset(activity.getAssets(), "fonts/Roboto-Light.ttf");
 
-        setupExclusions();
-
         ((TextView) activity.findViewById(android.R.id.text1)).setTypeface(mRobotoLight);
-    }
-
-    private void setupExclusions() {
-        mExcludedApps.add("com.google.glass.home");
-        mExcludedApps.add(mActivity.getPackageName());
     }
 
     /**
@@ -84,39 +75,29 @@ public class AppHelper {
 
 
         if (mApplications == null) {
-            mApplications = new ArrayList<ApplicationInfo>();
+            mApplications = new ArrayList<AppInfo>();
         }
         mApplications.clear();
 
-        PackageManager manager = mActivity.getPackageManager();
+        final PackageManager packageManager = mActivity.getPackageManager();
+        List<ApplicationInfo> installedApplications =
+                packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
 
-        Intent intent = new Intent("com.google.android.glass.action.VOICE_TRIGGER", null);
+        Collections.sort(installedApplications, new ApplicationInfo.DisplayNameComparator(packageManager));
 
-        addApplications(manager, intent);
-
-        intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-
-        addApplications(manager, intent);
-    }
-
-    private void addApplications(PackageManager manager, Intent intent) {
-        final List<ResolveInfo> apps = manager.queryIntentActivities(intent, 0);
-        Collections.sort(apps, new ResolveInfo.DisplayNameComparator(manager));
-
-        if (apps != null) {
-            final int count = apps.size();
+        if (installedApplications != null) {
+            final int count = installedApplications.size();
 
             for (int i = 0; i < count; i++) {
-                ApplicationInfo application = new ApplicationInfo();
-                ResolveInfo info = apps.get(i);
+                AppInfo application = new AppInfo();
+                ApplicationInfo info = installedApplications.get(i);
 
                 // Let's filter out this app
-                if (!mAddedPackages.contains(info.activityInfo.applicationInfo.packageName) && !mExcludedApps.contains(info.activityInfo.applicationInfo.packageName)) {
-                    mAddedPackages.add(info.activityInfo.applicationInfo.packageName);
-                    application.title = info.loadLabel(manager);
-                    application.setActivity(info.activityInfo.applicationInfo.packageName);
-                    application.icon = info.activityInfo.loadIcon(manager);
+                if (!mAddedPackages.contains(info.packageName) &&
+                        !isSystemPackage(info)) {
+                    mAddedPackages.add(info.packageName);
+                    application.title = info.loadLabel(packageManager);
+                    application.setActivity(info.packageName);
 
                     mApplications.add(application);
                 }
@@ -124,14 +105,19 @@ public class AppHelper {
         }
     }
 
+    private boolean isSystemPackage(ApplicationInfo pkgInfo) {
+        return ((pkgInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? true
+                : false;
+    }
+
     /**
      * GridView adapter to show the list of all installed applications.
      */
-    private class ApplicationsAdapter extends ArrayAdapter<ApplicationInfo> {
+    private class ApplicationsAdapter extends ArrayAdapter<AppInfo> {
         private static final int TYPE_SPACE = 0;
         private static final int TYPE_ITEM = 1;
 
-        public ApplicationsAdapter(Context context, ArrayList<ApplicationInfo> apps) {
+        public ApplicationsAdapter(Context context, ArrayList<AppInfo> apps) {
             super(context, 0, apps);
         }
 
@@ -148,7 +134,7 @@ public class AppHelper {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (getItemViewType(position) == TYPE_ITEM) {
-                final ApplicationInfo info = mApplications.get(position);
+                final AppInfo info = mApplications.get(position);
                 if (convertView == null) {
                     final LayoutInflater inflater = mActivity.getLayoutInflater();
                     convertView = inflater.inflate(R.layout.item_app, parent, false);
@@ -188,7 +174,7 @@ public class AppHelper {
      */
     private class ApplicationLauncher implements AdapterView.OnItemClickListener {
         public void onItemClick(AdapterView parent, View v, int position, long id) {
-            ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
+            AppInfo app = (AppInfo) parent.getItemAtPosition(position);
             mActivity.startActivity(app.intent);
         }
     }

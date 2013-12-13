@@ -24,7 +24,7 @@ import android.net.Uri;
  * Represents a launchable application. An application is made of a name (or title), an intent
  * and an icon.
  */
-class ApplicationInfo {
+class AppInfo {
     /**
      * The application name.
      */
@@ -55,11 +55,11 @@ class ApplicationInfo {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ApplicationInfo)) {
+        if (!(o instanceof AppInfo)) {
             return false;
         }
 
-        ApplicationInfo that = (ApplicationInfo) o;
+        AppInfo that = (AppInfo) o;
         return title.equals(that.title) &&
                 intent.getComponent().getClassName().equals(
                         that.intent.getComponent().getClassName());
